@@ -4,6 +4,8 @@ import type { AccountType, AccountStatus, CustomerStatus, KycStatus, KycDocument
 
 export interface CreateAccountPayload {
   owner: string;
+  name?: string;
+  phone?: string;
   type: AccountType;
   openingBalance: number;
   minBalance: number;
@@ -16,7 +18,7 @@ export function validateCreateAccountPayload(body: unknown): CreateAccountPayloa
     throw new BadRequestError("Invalid request body. Expected JSON object.");
   }
 
-  const { owner, type, openingBalance, minBalance, dailyLimit, maxTransaction } =
+  const { owner, name, phone, type, openingBalance, minBalance, dailyLimit, maxTransaction } =
     body as Record<string, unknown>;
 
   if (typeof owner !== "string" || !owner.includes("@")) {
@@ -30,6 +32,8 @@ export function validateCreateAccountPayload(body: unknown): CreateAccountPayloa
 
   return {
     owner: owner.trim().toLowerCase(),
+    name: typeof name === "string" && name.trim().length >= 2 ? name.trim() : undefined,
+    phone: typeof phone === "string" && phone.trim().length >= 6 ? phone.trim() : undefined,
     type: validateAccountType(type),
     openingBalance: validOpening,
     minBalance: validMin,

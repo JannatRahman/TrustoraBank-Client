@@ -326,7 +326,7 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
     customer: {
       portalTitle: "Customer Banking Portal",
       roleBadge: "Verified Bank Customer",
-      badgeColor: "bg-blue-50 text-[#3F72AF] border-blue-200",
+      badgeColor: "bg-blue-50 text-[#3F72AF] border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800",
       accentGrad: "from-[#112D4E] via-[#1D4168] to-[#3F72AF]",
       tagline: "Manage your personal banking profile, financial security, and notifications.",
       idLabel: "Customer Account ID",
@@ -336,7 +336,7 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
     "banking-staff": {
       portalTitle: "Banking Operations Portal",
       roleBadge: "Authorized Operations Officer",
-      badgeColor: "bg-teal-50 text-teal-700 border-teal-200",
+      badgeColor: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800",
       accentGrad: "from-[#0F243A] via-[#113C5E] to-[#1E6B7B]",
       tagline: "Manage your banking staff credentials, operational clearance, and system preferences.",
       idLabel: "Staff Officer Badge ID",
@@ -346,7 +346,7 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
     admin: {
       portalTitle: "Executive Administration Portal",
       roleBadge: "System Executive Administrator",
-      badgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
+      badgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800",
       accentGrad: "from-[#091524] via-[#112D4E] to-[#4338CA]",
       tagline: "Manage platform administration credentials, master governance, and security directives.",
       idLabel: "Administrator UUID",
@@ -356,7 +356,7 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
   }[role] || {
     portalTitle: "Digital Banking Portal",
     roleBadge: "Account Holder",
-    badgeColor: "bg-blue-50 text-[#3F72AF] border-blue-200",
+    badgeColor: "bg-blue-50 text-[#3F72AF] border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800",
     accentGrad: "from-[#112D4E] via-[#1D4168] to-[#3F72AF]",
     tagline: "Manage your profile, preferences, and account security.",
     idLabel: "User ID",
@@ -449,24 +449,26 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
         )}
 
         {/* Hero Profile Banner Card */}
-        <section className="relative overflow-hidden rounded-3xl border border-[#DBE2EF]/80 bg-white shadow-xs">
+        <section className="relative overflow-hidden rounded-3xl border border-[#DBE2EF]/80 bg-white shadow-xs dark:bg-[#112338] dark:border-[#1E3A5F]">
           {/* Header Gradient Backdrop */}
-          <div className={`h-36 sm:h-44 w-full bg-gradient-to-r ${roleConfig.accentGrad} relative`}>
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+          <div className={`h-40 sm:h-48 md:h-52 w-full bg-gradient-to-r ${roleConfig.accentGrad} relative`}>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_65%)]" />
             <div className="absolute top-4 right-4 hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-xs font-medium text-white shadow-xs">
               <ShieldCheck size={14} className="text-emerald-300" />
               <span>Trustora Secure Session Verified</span>
             </div>
           </div>
 
-          <div className="px-5 pb-6 sm:px-8 sm:pb-8">
-            <div className="-mt-16 sm:-mt-20 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          {/* Profile Card Body */}
+          <div className="px-5 pb-7 sm:px-8 sm:pb-8">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               
-              {/* Avatar + Main Details */}
+              {/* Left Column: Avatar + Identity Details */}
               <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left">
+                
                 {/* Avatar with Camera badge */}
-                <div className="relative group shrink-0">
-                  <div className="relative flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-gradient-to-br from-[#112D4E] to-[#3F72AF] text-3xl font-extrabold text-white shadow-lg ring-1 ring-black/5">
+                <div className="relative group shrink-0 -mt-16 sm:-mt-20">
+                  <div className="relative flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-gradient-to-br from-[#112D4E] to-[#3F72AF] text-3xl font-extrabold text-white shadow-lg ring-1 ring-black/5 dark:border-[#112338] dark:ring-white/10">
                     {currentImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -502,16 +504,17 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
                     aria-label="Upload profile photo"
                     title="Upload profile photo (JPEG, PNG, WebP up to 2MB)"
                     disabled={isUploadingAvatar}
-                    className="absolute -bottom-1 -right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-white bg-[#3F72AF] text-white shadow-md transition duration-200 hover:bg-[#112D4E] hover:scale-105"
+                    className="absolute -bottom-1 -right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-white bg-[#3F72AF] text-white shadow-md transition duration-200 hover:bg-[#112D4E] hover:scale-105 dark:border-[#112338]"
                   >
                     <Camera size={16} />
                   </button>
                 </div>
 
-                {/* Identity Info */}
-                <div className="space-y-1.5 pb-1">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <h2 className="text-xl sm:text-2xl font-bold text-[#112D4E]">
+                {/* Identity Info — Clearly below banner with clean vertical stacking */}
+                <div className="space-y-1.5 pt-2 sm:pt-4">
+                  {/* Name + Role Badge */}
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#112D4E] dark:text-white">
                       {profile?.name || "Valued User"}
                     </h2>
                     <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${roleConfig.badgeColor}`}>
@@ -520,27 +523,29 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
                     </span>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                    {profile?.email}
-                  </p>
+                  {/* Email address completely beneath name */}
+                  <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs sm:text-sm text-gray-500 font-medium dark:text-gray-300">
+                    <Mail size={13} className="shrink-0 text-[#3F72AF] dark:text-blue-400" />
+                    <span>{profile?.email}</span>
+                  </div>
 
                   {/* Identifier & Authority Badge */}
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1 text-xs text-gray-500">
-                    <div className="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 border border-gray-200/80 px-2.5 py-1 font-mono text-[11px]">
-                      <span className="text-gray-400">{roleConfig.idLabel}:</span>
-                      <span className="font-semibold text-gray-700">{profile?.id?.slice(0, 12)}...</span>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 border border-gray-200/80 px-2.5 py-1 font-mono text-[11px] dark:bg-gray-800/80 dark:border-gray-700">
+                      <span className="text-gray-400 dark:text-gray-400">{roleConfig.idLabel}:</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-200">{profile?.id?.slice(0, 12)}...</span>
                       <button
                         type="button"
                         onClick={copyIdToClipboard}
-                        className="ml-1 text-gray-400 hover:text-[#3F72AF] cursor-pointer"
+                        className="ml-1 text-gray-400 hover:text-[#3F72AF] dark:hover:text-blue-400 cursor-pointer"
                         title="Copy full identifier"
                       >
-                        {copiedId ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                        {copiedId ? <Check size={12} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={12} />}
                       </button>
                     </div>
 
-                    <span className="hidden sm:inline-block text-gray-300">•</span>
-                    <span className="text-[11px] font-medium text-gray-500">
+                    <span className="hidden sm:inline-block text-gray-300 dark:text-gray-600">•</span>
+                    <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
                       {roleConfig.authorityLevel}
                     </span>
                   </div>
@@ -548,9 +553,9 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
               </div>
 
               {/* Action Buttons for Avatar */}
-              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 pt-2 sm:pt-0">
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-2.5 pt-2 md:pt-0 shrink-0">
                 {pendingFile ? (
-                  <div className="flex items-center gap-2 p-1.5 bg-blue-50/80 rounded-2xl border border-blue-200">
+                  <div className="flex items-center gap-2 p-1.5 bg-blue-50/80 rounded-2xl border border-blue-200 dark:bg-blue-950/40 dark:border-blue-900">
                     <button
                       type="button"
                       onClick={handleUploadAvatar}
@@ -568,7 +573,7 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
                       type="button"
                       onClick={handleCancelAvatar}
                       disabled={isUploadingAvatar}
-                      className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+                      className="cursor-pointer rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                       Discard
                     </button>
@@ -578,9 +583,9 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#DBE2EF] bg-white px-3.5 py-2 text-xs font-semibold text-[#112D4E] shadow-xs transition hover:bg-gray-50"
+                      className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#DBE2EF] bg-white px-3.5 py-2 text-xs font-semibold text-[#112D4E] shadow-xs transition hover:bg-gray-50 dark:bg-[#0F1F33] dark:border-[#1E3A5F] dark:text-gray-200 dark:hover:bg-[#162D4A]"
                     >
-                      <Camera size={14} className="text-[#3F72AF]" />
+                      <Camera size={14} className="text-[#3F72AF] dark:text-blue-400" />
                       Update Picture
                     </button>
 
@@ -589,7 +594,7 @@ export default function UnifiedProfileView({ role }: UnifiedProfileProps) {
                         type="button"
                         onClick={handleRemoveAvatar}
                         disabled={isUploadingAvatar}
-                        className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/50 px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-100/60"
+                        className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/50 px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-100/60 dark:bg-rose-950/30 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/50"
                         title="Remove uploaded picture"
                       >
                         <Trash2 size={13} />

@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -12,76 +11,25 @@ import {
   AlertCircle,
   Eye,
   ChevronDown,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 type CustomerStatus = "Verified" | "Pending" | "Incomplete";
 
 type Customer = {
+  _id?: string;
   id: string;
   name: string;
   email: string;
   phone: string;
   account: string;
+  accountNumber?: string | null;
   date: string;
   status: CustomerStatus;
+  rawStatus?: string;
+  kycStatus?: string;
 };
-
-const customers: Customer[] = [
-  {
-    id: "CUS-1001",
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
-    phone: "+1 202 555 0142",
-    account: "**** 4821",
-    date: "Nov 18, 2026",
-    status: "Verified",
-  },
-  {
-    id: "CUS-1002",
-    name: "Michael Chen",
-    email: "michael@example.com",
-    phone: "+1 202 555 0185",
-    account: "**** 7293",
-    date: "Nov 17, 2026",
-    status: "Pending",
-  },
-  {
-    id: "CUS-1003",
-    name: "Emma Williams",
-    email: "emma@example.com",
-    phone: "+1 202 555 0128",
-    account: "**** 1934",
-    date: "Nov 16, 2026",
-    status: "Verified",
-  },
-  {
-    id: "CUS-1004",
-    name: "David Miller",
-    email: "david@example.com",
-    phone: "+1 202 555 0167",
-    account: "Not created",
-    date: "Nov 15, 2026",
-    status: "Incomplete",
-  },
-  {
-    id: "CUS-1005",
-    name: "Olivia Brown",
-    email: "olivia@example.com",
-    phone: "+1 202 555 0191",
-    account: "**** 8352",
-    date: "Nov 14, 2026",
-    status: "Pending",
-  },
-  {
-    id: "CUS-1006",
-    name: "James Wilson",
-    email: "james@example.com",
-    phone: "+1 202 555 0173",
-    account: "**** 6410",
-    date: "Nov 12, 2026",
-    status: "Verified",
-  },
-];
 
 const statusStyles: Record<CustomerStatus, string> = {
   Verified: "bg-green-50 text-green-700",
@@ -90,22 +38,70 @@ const statusStyles: Record<CustomerStatus, string> = {
 };
 
 export default function ManageCustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
+
+  const fetchCustomers = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await fetch("/api/staff/customers?limit=100");
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Failed to load customers.");
+      }
+
+      const mapped: Customer[] = (json.data || []).map((item: any) => ({
+        _id: item._id,
+        id: item.id || item._id || "N/A",
+        name: item.name || "Unnamed Customer",
+        email: item.email || "",
+        phone: item.phone || "N/A",
+        account: item.account || "No account",
+        accountNumber: item.accountNumber || null,
+        date: item.createdAt
+          ? new Date(item.createdAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "N/A",
+        status: item.status || "Pending",
+        rawStatus: item.rawStatus || "ACTIVE",
+        kycStatus: item.kycStatus || "PENDING",
+      }));
+
+      setCustomers(mapped);
+    } catch (err: any) {
+      console.error("Error fetching customers:", err);
+      setError(err.message || "Failed to load customer list.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
   const filteredCustomers = useMemo(() => {
     return customers.filter((customer) => {
       const matchesSearch =
         customer.name.toLowerCase().includes(search.toLowerCase()) ||
         customer.email.toLowerCase().includes(search.toLowerCase()) ||
-        customer.id.toLowerCase().includes(search.toLowerCase());
+        customer.id.toLowerCase().includes(search.toLowerCase()) ||
+        customer.phone.toLowerCase().includes(search.toLowerCase());
 
       const matchesStatus =
         status === "All" || customer.status === status;
 
       return matchesSearch && matchesStatus;
     });
-  }, [search, status]);
+  }, [customers, search, status]);
 
   const verifiedCount = customers.filter(
     (customer) => customer.status === "Verified"
@@ -133,18 +129,37 @@ export default function ManageCustomersPage() {
               Customer Management
             </h1>
             <p className="mt-2 text-sm text-gray-500">
-              Manage customer information and review verification status.
+              Manage real customer information, view bank accounts, and review KYC verification status.
             </p>
           </div>
 
-          <Link
-            href="/dashboard/bankStaff/customers/new"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#172554] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#112D4E]"
-          >
-            <Plus size={18} />
-            Register Customer
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchCustomers}
+              disabled={isLoading}
+              title="Refresh customer list"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+
+            <Link
+              href="/dashboard/bankStaff/customers/new"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#172554] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#112D4E]"
+            >
+              <Plus size={18} />
+              Register Customer
+            </Link>
+          </div>
         </div>
+
+        {error && (
+          <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+            <AlertCircle size={20} className="shrink-0" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
 
         {/* Statistics */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -152,7 +167,7 @@ export default function ManageCustomersPage() {
             title="Total Customers"
             value={customers.length.toString()}
             icon={<Users size={21} />}
-            description="Registered customers"
+            description="Registered in database"
           />
 
           <StatCard
@@ -185,7 +200,7 @@ export default function ManageCustomersPage() {
                 All Customers
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Search and review registered customer records.
+                Search and review live customer records from the database.
               </p>
             </div>
 
@@ -199,7 +214,7 @@ export default function ManageCustomersPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search customers..."
+                  placeholder="Search name, email, phone..."
                   className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#3F72AF] sm:w-64"
                 />
               </div>
@@ -224,92 +239,95 @@ export default function ManageCustomersPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left">
-              <thead className="bg-[#F9F7F7] text-xs uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-5 py-4 font-semibold">Customer</th>
-                  <th className="px-5 py-4 font-semibold">Customer ID</th>
-                  <th className="px-5 py-4 font-semibold">Phone</th>
-                  <th className="px-5 py-4 font-semibold">Bank Account</th>
-                  <th className="px-5 py-4 font-semibold">Registration</th>
-                  <th className="px-5 py-4 font-semibold">KYC Status</th>
-                  <th className="px-5 py-4 font-semibold">Action</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
-                {filteredCustomers.map((customer) => (
-                  <tr
-                    key={customer.id}
-                    className="transition hover:bg-[#F9F7F7]/70"
-                  >
-                    <td className="px-5 py-4">
-                      <p className="font-semibold text-[#112D4E]">
-                        {customer.name}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        {customer.email}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-gray-600">
-                      {customer.id}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-gray-600">
-                      {customer.phone}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-gray-600">
-                      {customer.account}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-gray-600">
-                      {customer.date}
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusStyles[customer.status]}`}
-                      >
-                        {customer.status}
-                      </span>
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <button
-                        type="button"
-                        title="View customer"
-                        className="rounded-lg border border-gray-200 p-2 text-[#3F72AF] transition hover:bg-[#DBE2EF]/50"
-                      >
-                        <Eye size={17} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-
-                {filteredCustomers.length === 0 && (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16 text-gray-500">
+                <Loader2 size={28} className="animate-spin text-[#3F72AF]" />
+                <span className="ml-3 text-sm font-medium">Loading registered customers...</span>
+              </div>
+            ) : (
+              <table className="w-full min-w-[850px] text-left">
+                <thead className="bg-[#F9F7F7] text-xs uppercase tracking-wider text-gray-500">
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-12 text-center text-sm text-gray-500"
-                    >
-                      No customers found. Try another search or filter.
-                    </td>
+                    <th className="px-5 py-4 font-semibold">Customer</th>
+                    <th className="px-5 py-4 font-semibold">Customer ID</th>
+                    <th className="px-5 py-4 font-semibold">Phone</th>
+                    <th className="px-5 py-4 font-semibold">Bank Account</th>
+                    <th className="px-5 py-4 font-semibold">Registration</th>
+                    <th className="px-5 py-4 font-semibold">KYC Status</th>
+                    <th className="px-5 py-4 font-semibold">Action</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody className="divide-y divide-gray-100">
+                  {filteredCustomers.map((customer) => (
+                    <tr
+                      key={customer.id}
+                      className="transition hover:bg-[#F9F7F7]/70"
+                    >
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-[#112D4E]">
+                          {customer.name}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {customer.email}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-4 text-xs font-mono text-gray-600">
+                        {customer.id.length > 12 ? `${customer.id.slice(0, 10)}...` : customer.id}
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {customer.phone}
+                      </td>
+
+                      <td className="px-5 py-4 text-sm font-medium text-gray-700">
+                        {customer.account}
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-gray-600">
+                        {customer.date}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusStyles[customer.status] || "bg-gray-100 text-gray-700"}`}
+                        >
+                          {customer.status}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <Link
+                          href={`/dashboard/bankStaff/customers?view=${encodeURIComponent(customer.email)}`}
+                          title="View customer"
+                          className="inline-flex rounded-lg border border-gray-200 p-2 text-[#3F72AF] transition hover:bg-[#DBE2EF]/50"
+                        >
+                          <Eye size={17} />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {filteredCustomers.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-5 py-12 text-center text-sm text-gray-500"
+                      >
+                        No customers found. Try another search or filter.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <div className="border-t border-gray-100 px-5 py-4 text-sm text-gray-500">
             Showing {filteredCustomers.length} of {customers.length} customers
           </div>
         </div>
-
-        <p className="text-xs text-gray-400">
-          Prototype interface — all displayed customer records are illustrative mock data.
-        </p>
       </div>
     </div>
   );

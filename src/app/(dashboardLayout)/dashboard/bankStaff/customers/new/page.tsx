@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -13,20 +12,86 @@ import {
   CreditCard,
   CheckCircle2,
   ShieldCheck,
+  Loader2,
+  AlertCircle,
+  Briefcase,
+  Calendar,
 } from "lucide-react";
 
 export default function NewCustomerPage() {
   const router = useRouter();
-  const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [registeredCustomer, setRegisteredCustomer] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+  } | null>(null);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  // Form fields
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [address, setAddress] = useState("");
+  const [identityType, setIdentityType] = useState("national-id");
+  const [identityNumber, setIdentityNumber] = useState("");
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
 
-    // UI prototype only: no customer is saved to a database.
-    setSuccess(true);
+    try {
+      const res = await fetch("/api/staff/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone,
+          dateOfBirth,
+          occupation,
+          address,
+          identityType,
+          identityNumber,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || data.error || "Failed to register customer.");
+      }
+
+      setRegisteredCustomer({
+        name: data.data.name,
+        email: data.data.email,
+        phone: data.data.phone,
+      });
+    } catch (err: any) {
+      console.error("Customer registration error:", err);
+      setError(err.message || "An unexpected error occurred while registering the customer.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (success) {
+  const handleReset = () => {
+    setRegisteredCustomer(null);
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setDateOfBirth("");
+    setOccupation("");
+    setAddress("");
+    setIdentityType("national-id");
+    setIdentityNumber("");
+    setError(null);
+  };
+
+  if (registeredCustomer) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F9F7F7] px-4 py-10">
         <div className="w-full max-w-md rounded-3xl border border-[#DBE2EF] bg-white p-8 text-center shadow-sm">
@@ -35,25 +100,31 @@ export default function NewCustomerPage() {
           </div>
 
           <h1 className="mt-5 text-2xl font-bold text-[#112D4E]">
-            Registration Submitted!
+            Customer Registered!
           </h1>
 
-          <p className="mt-3 text-sm leading-6 text-gray-500">
-            Your demo registration form has been completed successfully.
-            No customer record has been saved yet.
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            <strong>{registeredCustomer.name}</strong> ({registeredCustomer.email}) has been successfully saved to Trustora Bank&apos;s customer directory.
           </p>
+
+          <div className="mt-5 rounded-2xl bg-gray-50 p-4 text-left text-xs space-y-1.5 text-gray-600 border border-gray-100">
+            <p><span className="font-semibold text-[#112D4E]">Name:</span> {registeredCustomer.name}</p>
+            <p><span className="font-semibold text-[#112D4E]">Email:</span> {registeredCustomer.email}</p>
+            <p><span className="font-semibold text-[#112D4E]">Phone:</span> {registeredCustomer.phone}</p>
+            <p><span className="font-semibold text-[#112D4E]">Status:</span> Active (KYC Pending)</p>
+          </div>
 
           <div className="mt-7 flex flex-col gap-3">
             <button
               onClick={() => router.push("/dashboard/bankStaff/customers")}
-              className="rounded-xl bg-[#172554] px-5 py-3 text-sm font-semibold text-white hover:bg-[#112D4E]"
+              className="rounded-xl bg-[#172554] px-5 py-3 text-sm font-semibold text-white hover:bg-[#112D4E] transition shadow-sm"
             >
-              Back to Customers
+              Back to Customers Directory
             </button>
 
             <button
-              onClick={() => setSuccess(false)}
-              className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-[#112D4E] hover:bg-gray-50"
+              onClick={handleReset}
+              className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-[#112D4E] hover:bg-gray-50 transition"
             >
               Register Another Customer
             </button>
@@ -86,9 +157,16 @@ export default function NewCustomerPage() {
           </h1>
 
           <p className="mt-2 text-sm text-gray-500">
-            Enter the customer's personal and identity information.
+            Enter the customer&apos;s personal and identity information to create an active customer profile.
           </p>
         </div>
+
+        {error && (
+          <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+            <AlertCircle size={20} className="shrink-0" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
@@ -116,7 +194,9 @@ export default function NewCustomerPage() {
                   type="text"
                   placeholder="Enter full name"
                   required
-                  className="form-input"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 />
               </FormField>
 
@@ -126,7 +206,9 @@ export default function NewCustomerPage() {
                   type="email"
                   placeholder="customer@example.com"
                   required
-                  className="form-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 />
               </FormField>
 
@@ -136,16 +218,19 @@ export default function NewCustomerPage() {
                   type="tel"
                   placeholder="+880 1XXXXXXXXX"
                   required
-                  className="form-input"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 />
               </FormField>
 
-              <FormField label="Date of Birth" required>
+              <FormField label="Date of Birth">
                 <input
                   name="dateOfBirth"
                   type="date"
-                  required
-                  className="form-input"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 />
               </FormField>
 
@@ -153,8 +238,10 @@ export default function NewCustomerPage() {
                 <input
                   name="occupation"
                   type="text"
-                  placeholder="Enter occupation"
-                  className="form-input"
+                  placeholder="e.g. Software Engineer, Business Owner"
+                  value={occupation}
+                  onChange={(e) => setOccupation(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 />
               </FormField>
 
@@ -162,9 +249,11 @@ export default function NewCustomerPage() {
                 <input
                   name="address"
                   type="text"
-                  placeholder="Enter full address"
+                  placeholder="House, Street, City, Country"
                   required
-                  className="form-input"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 />
               </FormField>
             </div>
@@ -192,12 +281,10 @@ export default function NewCustomerPage() {
                 <select
                   name="identityType"
                   required
-                  defaultValue=""
-                  className="form-input"
+                  value={identityType}
+                  onChange={(e) => setIdentityType(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 >
-                  <option value="" disabled>
-                    Select identity type
-                  </option>
                   <option value="national-id">National ID</option>
                   <option value="passport">Passport</option>
                   <option value="driving-license">Driving License</option>
@@ -210,7 +297,9 @@ export default function NewCustomerPage() {
                   type="text"
                   placeholder="Enter identity number"
                   required
-                  className="form-input"
+                  value={identityNumber}
+                  onChange={(e) => setIdentityNumber(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none transition focus:border-[#3F72AF]"
                 />
               </FormField>
             </div>
@@ -228,9 +317,7 @@ export default function NewCustomerPage() {
                 KYC Verification Notice
               </h3>
               <p className="mt-1 text-xs leading-5 text-gray-600">
-                Submitting customer information does not automatically verify
-                their identity. The customer must complete the required KYC
-                review process.
+                Registering a customer here creates an active customer account in the system with KYC Status set to Pending. The customer will immediately be available for bank account opening.
               </p>
             </div>
           </div>
@@ -246,9 +333,17 @@ export default function NewCustomerPage() {
 
             <button
               type="submit"
-              className="rounded-xl bg-[#172554] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#112D4E]"
+              disabled={isSubmitting}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#172554] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#112D4E] disabled:opacity-50"
             >
-              Submit Registration
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Saving Customer...
+                </>
+              ) : (
+                "Submit Registration"
+              )}
             </button>
           </div>
         </form>

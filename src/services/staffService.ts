@@ -569,4 +569,118 @@ export class StaffService {
       await mongoSession.endSession();
     }
   }
+
+  /**
+   * Register a new customer by Banking Staff or Admin.
+   * Directly persists to COLLECTIONS.USER with role: "customer".
+   */
+  static async registerCustomer(params: {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    dateOfBirth?: string;
+    occupation?: string;
+    identityType?: string;
+    identityNumber?: string;
+    registeredBy: string;
+  }) {
+    const normalizedEmail = params.email.trim().toLowerCase();
+    const normalizedName = params.name.trim();
+
+    if (!normalizedName || normalizedName.length < 2) {
+      throw new BadRequestError("Customer full name must be at least 2 characters.");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
+      throw new BadRequestError("Please provide a valid email address.");
+    }
+
+    if (!params.phone || params.phone.trim().length < 6) {
+      throw new BadRequestError("Please provide a valid phone number.");
+    }
+
+    if (!params.address || params.address.trim().length < 3) {
+      throw new BadRequestError("Please provide a valid customer address.");
+    }
+
+    const db = await getDatabase();
+    const usersCol = db.collection<DbUser>(COLLECTIONS.USER);
+
+    // Check if customer or user with this email already exists
+    const existingUser = await usersCol.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      throw new ConflictError(
+        `A user with email "${normalizedEmail}" is already registered (Role: ${existingUser.role}).`
+      );
+    }
+
+    // Map KYC document type if provided
+    let kycDocType: "NATIONAL_ID" | "PASSPORT" | "DRIVING_LICENSE" = "NATIONAL_ID";
+    if (params.identityType) {
+      const idTypeNormalized = params.identityType.toLowerCase().replace(/[-_\s]/g, "");
+      if (idTypeNormalized.includes("passport")) {
+        kycDocType = "PASSPORT";
+      } else if (idTypeNormalized.includes("driving") || idTypeNormalized.includes("license")) {
+        kycDocType = "DRIVING_LICENSE";
+      } else {
+        kycDocType = "NATIONAL_ID";
+      }
+    }
+
+    const now = new Date();
+    const newCustomerDoc: DbUser = {
+      name: normalizedName,
+      email: normalizedEmail,
+      emailVerified: true,
+      role: "customer",
+      status: "ACTIVE",
+      phone: params.phone.trim(),
+      address: params.address.trim(),
+      kycStatus: "PENDING",
+      kycDocumentType: kycDocType,
+      kycDocumentNumber: params.identityNumber?.trim() || undefined,
+      kycSubmittedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const insertResult = await usersCol.insertOne(newCustomerDoc);
+
+    // Insert audit log
+    try {
+      const auditCol = db.collection<DbAuditLog>(COLLECTIONS.AUDIT_LOGS);
+      await auditCol.insertOne({
+        performedBy: params.registeredBy,
+        role: "STAFF",
+        action: "CUSTOMER_REGISTERED_BY_STAFF",
+        targetType: "user",
+        target: insertResult.insertedId.toString(),
+        description: `Customer ${normalizedName} (${normalizedEmail}) registered by ${params.registeredBy}`,
+        metadata: {
+          customerId: insertResult.insertedId.toString(),
+          email: normalizedEmail,
+          phone: params.phone.trim(),
+          registeredBy: params.registeredBy,
+        },
+        createdAt: now,
+      });
+    } catch (auditErr) {
+      console.warn("Failed to write audit log for staff customer registration:", auditErr);
+    }
+
+    return {
+      _id: insertResult.insertedId.toString(),
+      id: insertResult.insertedId.toString(),
+      name: normalizedName,
+      email: normalizedEmail,
+      phone: params.phone.trim(),
+      address: params.address.trim(),
+      role: "customer",
+      status: "ACTIVE",
+      kycStatus: "PENDING",
+      createdAt: now,
+    };
+  }
 }

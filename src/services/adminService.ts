@@ -447,7 +447,24 @@ export class AdminService {
 
     const user = await usersCol.findOne({ email: payload.owner.toLowerCase() });
     if (!user) {
-      throw new NotFoundError(`Customer ${payload.owner} was not found.`);
+      throw new NotFoundError(
+        `Customer with email ${payload.owner} was not found. In accordance with Trustora Bank security policy, unlinked bank accounts cannot be created. The customer must register for an account first before a bank account can be opened.`
+      );
+    }
+
+    // If customer exists and name or phone was provided and needs updating
+    const userUpdates: Partial<DbUser> = {};
+    if (payload.name && (!user.name || user.name.trim() === "")) {
+      userUpdates.name = payload.name;
+    }
+    if (payload.phone && (!user.phone || user.phone !== payload.phone)) {
+      userUpdates.phone = payload.phone;
+    }
+    if (Object.keys(userUpdates).length > 0) {
+      await usersCol.updateOne(
+        { _id: user._id },
+        { $set: { ...userUpdates, updatedAt: new Date() } }
+      );
     }
 
     const accountNumber = await this.generateUniqueAccountNumber();
